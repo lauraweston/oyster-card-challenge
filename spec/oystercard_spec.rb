@@ -24,6 +24,7 @@ describe Oystercard do
   end
 
   it "should register that a card has touched in" do
+    subject.top_up(Oystercard::MINIMUM_BALANCE + 1)
     subject.touch_in
     expect(subject.in_journey?).to eq true
   end
@@ -31,5 +32,9 @@ describe Oystercard do
   it "should register that a card has touched out" do
     subject.touch_out
     expect(subject.in_journey?).to eq false
+  end
+
+  it "should raise error when touching in if balance is below minimum" do
+    expect { subject.touch_in }.to raise_error("Insufficient funds!")
   end
 end
