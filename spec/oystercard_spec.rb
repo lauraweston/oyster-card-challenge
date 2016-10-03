@@ -22,4 +22,14 @@ describe Oystercard do
     subject.deduct(5)
     expect(subject.balance).to eq 5
   end
+
+  it "should register that a card has touched in" do
+    subject.touch_in
+    expect(subject.in_journey?).to eq true
+  end
+
+  it "should register that a card has touched out" do
+    subject.touch_out
+    expect(subject.in_journey?).to eq false
+  end
 end
