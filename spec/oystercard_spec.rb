@@ -2,39 +2,48 @@ require 'oystercard.rb'
 
 describe Oystercard do
 
+  subject(:card) {described_class.new}
+
   it "starts with a zero balance" do
-    expect(subject.balance).to eq 0
+    expect(card.balance).to eq 0
   end
 
   it "should top up the oyster card by the given amount" do
-    subject.top_up(10)
-    expect(subject.balance).to eq 10
+    card.top_up(10)
+    expect(card.balance).to eq 10
   end
 
   it "should return an error if maximum top up is exceeded" do
     maximum = Oystercard::MAXIMUM_LIMIT
-    subject.top_up(maximum)
-    expect {subject.top_up(1)}.to raise_error("Balance cannot exceed £#{maximum}.")
+    card.top_up(maximum)
+    expect {card.top_up(1)}.to raise_error("Balance cannot exceed £#{maximum}.")
   end
 
   it "should deduct a specified amount when used" do
-    subject.top_up(10)
-    subject.deduct(5)
-    expect(subject.balance).to eq 5
+    card.top_up(10)
+    card.touch_out
+    expect(card.balance).to eq 10 - Oystercard::MINIMUM_FARE
   end
 
   it "should register that a card has touched in" do
-    subject.top_up(Oystercard::MINIMUM_BALANCE + 1)
-    subject.touch_in
-    expect(subject.in_journey?).to eq true
+    card.top_up(Oystercard::MINIMUM_BALANCE + 1)
+    card.touch_in
+    expect(card.in_journey?).to eq true
   end
 
   it "should register that a card has touched out" do
-    subject.touch_out
-    expect(subject.in_journey?).to eq false
+    card.touch_out
+    expect(card.in_journey?).to eq false
   end
 
   it "should raise error when touching in if balance is below minimum" do
-    expect { subject.touch_in }.to raise_error("Insufficient funds!")
+    expect { card.touch_in }.to raise_error("Insufficient funds!")
   end
+
+  it "should deduct the journey cost on touch out" do
+    card.top_up(10)
+    card.touch_in
+    expect {card.touch_out}.to change{card.balance}.by(-Oystercard::MINIMUM_FARE)
+  end
+
 end
