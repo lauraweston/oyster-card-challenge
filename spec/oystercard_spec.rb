@@ -35,9 +35,7 @@ describe Oystercard do
     it "should register that a card has touched in" do
       expect(card.in_journey?).to eq true
     end
-    it "should remember entry station" do
-      expect(card.entry_station).to eq entry_station
-    end
+
     it "should raise error if balance is below minimum" do
       card.touch_out(exit_station)
       expect { card.touch_in(entry_station) }.to raise_error("Insufficient funds!")
@@ -57,11 +55,23 @@ describe Oystercard do
       card.touch_in(entry_station)
       expect {card.touch_out(exit_station)}.to change{card.balance}.by(-Oystercard::MINIMUM_FARE)
     end
-    it "should forget entry station" do
-      expect(card.entry_station).to eq nil
-    end
+
     it "stores all journeys" do
-      expect(card.journeys).to include({:entry_station => entry_station, :exit_station => exit_station})
+      expect(card.journeys.last).to be_an_instance_of(Journey)
+    end
+  end
+  context "incomplete journeys" do
+    before do
+      card.top_up(Oystercard::MAXIMUM_LIMIT)
+      card.touch_in(entry_station)
+      card.touch_in(entry_station)
+    end
+    it "stores journeys" do
+      expect(card.journeys.last).to be_an_instance_of(Journey)
+    end
+
+    it "charges penalty fare " do
+      expect{card.touch_in(entry_station)}.to change{card.balance}.by(-6)
     end
   end
 end
