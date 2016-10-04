@@ -1,5 +1,3 @@
-
-
 class Oystercard
 
   attr_reader :balance, :entry_station, :journeys
@@ -28,7 +26,7 @@ class Oystercard
   end
 
   def touch_out(station)
-    @journeys << {:entry_station => @entry_station, :exit_station => station}
+    store_journey(station)
     @entry_station = nil
     deduct(MINIMUM_FARE)
   end
@@ -39,4 +37,7 @@ private
     @balance -= amount
   end
 
+  def store_journey(station)
+    journeys << {:entry_station => @entry_station, :exit_station => station}
+  end
 end
