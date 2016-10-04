@@ -2,48 +2,58 @@ require 'oystercard.rb'
 
 describe Oystercard do
 
-  subject(:card) {described_class.new}
+  subject(:card) { described_class.new }
+  let(:station) { double :station }
 
   it "starts with a zero balance" do
     expect(card.balance).to eq 0
   end
 
-  it "should top up the oyster card by the given amount" do
-    card.top_up(10)
-    expect(card.balance).to eq 10
+  context "topping up" do
+    before do
+      card.top_up(Oystercard::MAXIMUM_LIMIT)
+    end
+    it "should top up the oyster card by the given amount" do
+      expect(card.balance).to eq Oystercard::MAXIMUM_LIMIT
+    end
+    it "should return an error if maximum top up is exceeded" do
+      expect {card.top_up(1)}.to raise_error("Balance cannot exceed £#{Oystercard::MAXIMUM_LIMIT}.")
+    end
   end
 
-  it "should return an error if maximum top up is exceeded" do
-    maximum = Oystercard::MAXIMUM_LIMIT
-    card.top_up(maximum)
-    expect {card.top_up(1)}.to raise_error("Balance cannot exceed £#{maximum}.")
+  context "when touching in" do
+    before do
+      card.top_up(Oystercard::MINIMUM_BALANCE)
+      card.touch_in(station)
+    end
+    it "should register that a card has touched in" do
+      expect(card.in_journey?).to eq true
+    end
+    it "should remember entry station" do
+      expect(card.entry_station).to eq station
+    end
+    it "should raise error if balance is below minimum" do
+      card.touch_out
+      expect { card.touch_in(station) }.to raise_error("Insufficient funds!")
+    end
   end
 
-  it "should deduct a specified amount when used" do
-    card.top_up(10)
-    card.touch_out
-    expect(card.balance).to eq 10 - Oystercard::MINIMUM_FARE
-  end
-
-  it "should register that a card has touched in" do
-    card.top_up(Oystercard::MINIMUM_BALANCE + 1)
-    card.touch_in
-    expect(card.in_journey?).to eq true
-  end
-
-  it "should register that a card has touched out" do
-    card.touch_out
-    expect(card.in_journey?).to eq false
-  end
-
-  it "should raise error when touching in if balance is below minimum" do
-    expect { card.touch_in }.to raise_error("Insufficient funds!")
-  end
-
-  it "should deduct the journey cost on touch out" do
-    card.top_up(10)
-    card.touch_in
-    expect {card.touch_out}.to change{card.balance}.by(-Oystercard::MINIMUM_FARE)
+  context "when touching out" do
+    before do
+      card.top_up(Oystercard::MAXIMUM_LIMIT)
+      card.touch_in(station)
+      card.touch_out
+    end
+    it "should register that a card has touched out" do
+      expect(card.in_journey?).to eq false
+    end
+    it "should deduct the journey cost" do
+      card.touch_in(station)
+      expect {card.touch_out}.to change{card.balance}.by(-Oystercard::MINIMUM_FARE)
+    end
+    it "should forget entry station" do
+      expect(card.entry_station).to eq nil
+    end
   end
 
 end
